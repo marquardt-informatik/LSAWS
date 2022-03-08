@@ -1,0 +1,112 @@
+image:
+  name: hashicorp/terraform:0.13.7
+  entrypoint:
+    - "/usr/bin/env"
+    - "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+stages:
+  - validate
+  - plan
+  - deploy
+
+variables:
+  LS_DYNAMIC_ROLE: "arn:aws:iam::162524238833:role/Terraform"
+  LS_STAGING_ROLE: "arn:aws:iam::027669347332:role/Terraform"
+  LS_PRODUCTION_ROLE: "arn:aws:iam::908821207639:role/Terraform"
+
+Validate environment changes:
+  stage: validate
+  script:
+    - terraform validate
+
+.static-plan-template: &static-plan-template
+  stage: plan
+  script:
+    - mkdir -p ${HOME}/.aws
+    - |
+      cat >> ${HOME}/.aws/config <<EOL
+      [profile terraform]
+      role_arn = ${TF_VAR_role_arn}
+      credential_source=Environment
+      EOL
+    - apk add nodejs npm python3 py-pip python3-dev
+    - pip3 install --upgrade "pip==19.2.3"
+    - pip3 install awscli boto3
+    - node -v
+    - cd ./lambda/backend && npm i && cd ../../
+    - cd ./lambda/json-to-excel && npm i && cd ../../
+    - cd ./lambda/microsoft-business-central && npm i && cd ../../
+    - cd ./lambda/pdf-to-tiff && npm i && cd ../../
+    - cd ./lambda/salesforce && npm i && cd ../../
+    - cd terraform
+
+    - ADDITIONAL_VAR_FILE=""
+    - if [ "${TF_VAR_environment}" != "production" ] ; then ADDITIONAL_VAR_FILE="-var-file=${TF_VAR_environment}.environment.tfvars"; fi
+
+    - terraform init -input=false -backend-config="key=${TF_BACKEND_CONFIG_KEY}"
+    - terraform plan -input=false $ADDITIONAL_VAR_FILE -out "integrated-billing-planfile"
+  artifacts:
+    paths:
+      - terraform/integrated-billing-planfile
+      - terraform/zip/*.zip
+
+.static-deploy-template: &static-deploy-template
+  stage: deploy
+  script:
+    - mkdir -p ${HOME}/.aws
+    - |
+      cat >> ${HOME}/.aws/config <<EOL
+      [profile terraform]
+      role_arn = ${TF_VAR_role_arn}
+      credential_source=Environment
+      EOL
+    - cd terraform
+    - terraform init -input=false -backend-config="key=${TF_BACKEND_CONFIG_KEY}"
+    - terraform apply -auto-approve "integrated-billing-planfile"
+
+Plan for staging:
+  <<: *static-plan-template
+  variables:
+    TF_VAR_role_arn: $LS_STAGING_ROLE
+    TF_VAR_environment: "staging"
+    TF_VAR_aws_region: "eu-central-1"
+    TF_VAR_name_prefix: ""
+    TF_BACKEND_CONFIG_KEY: "staging/platform/integrated-billing/terraform.tfstate"
+
+Apply to staging:
+  <<: *static-deploy-template
+  variables:
+    TF_VAR_role_arn: $LS_STAGING_ROLE
+    TF_VAR_environment: "staging"
+    TF_VAR_aws_region: "eu-central-1"
+    TF_VAR_name_prefix: ""
+    TF_BACKEND_CONFIG_KEY: "staging/platform/integrated-billing/terraform.tfstate"
+  when: manual
+  dependencies:
+    - Plan for staging
+
+Plan for production:
+  <<: *static-plan-template
+  variables:
+    TF_VAR_role_arn: $LS_PRODUCTION_ROLE
+    TF_VAR_environment: "production"
+    TF_VAR_aws_region: "eu-central-1"
+    TF_VAR_name_prefix: ""
+    TF_BACKEND_CONFIG_KEY: "production/platform/integrated-billing/terraform.tfstate"
+  when: manual
+  only:
+    - tags
+
+Apply to production:
+  <<: *static-deploy-template
+  variables:
+    TF_VAR_role_arn: $LS_PRODUCTION_ROLE
+    TF_VAR_environment: "production"
+    TF_VAR_aws_region: "eu-central-1"
+    TF_VAR_name_prefix: ""
+    TF_BACKEND_CONFIG_KEY: "production/platform/integrated-billing/terraform.tfstate"
+  when: manual
+  dependencies:
+    - Plan for production
+  only:
+    - tags
