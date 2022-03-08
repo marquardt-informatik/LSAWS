@@ -6,6 +6,7 @@ module.exports = async function (event) {
   const { records: opportunityLines = [] } = body["OpportunityLineItems"] || {};
 
   const contract = await microsoft.createContract({
+    opportunityName: body["Name"],
     opportunityId: body["Id"], // @todo sfOpportunityId
     parentOpportunityId: body["Parent_Opportunity__c"], // @todo sfParentOpportunityId
     oppLegalEntity: body["Opp_Legal_Entity__c"],
@@ -27,18 +28,18 @@ module.exports = async function (event) {
     invoiceAccountId: body["Invoice_Account__c"],
     invoiceContactId: body["Invoice_Contact__c"],
     sellToAccountId: body["AccountId"], // @todo ??
-    // 'sellToCountry': body[''],
-    // 'sellToStreet': body[''],
-    // 'sellToPostcode': body[''],
-    // 'sellToCity': body[''],
-    // 'sellToState': body[''],
+    sellToCountry: body['Different_Billing_Country_Picklist__c'],
+    sellToStreet: body["Different_Billing_Street__c"],
+    sellToPostcode: body["Different_Billing_Zip_Postal_Code__c"],
+    sellToCity: body["Different_Billing_City__c"],
+    sellToState: body["Different_Billing_State__c"],
     sellToContactName: body["Different_Billing_Contact_Name__c"],
     sellToContactPhone: body["Different_Billing_Contact_Phone__c"],
     sellToContacteMail: body["Different_Billing_Email_Address__c"],
-    // 'acceptanceDate': body[''],
+    acceptanceDate: body["CloseDate"],
     // 'contractStart': body[''],
     // 'contractEnd': body[''],
-    // 'budget': body[''],
+    budget: body["Flexible_Budget__c"],
     // 'budgetCurrency': body[''],
     // 'budgetType': body[''],
     // 'sendingProfile': body[''],
@@ -47,8 +48,15 @@ module.exports = async function (event) {
     // 'ordererEMail': body[''],
     // 'additionalText': body[''],
     costCenter: body["Cost_Center__c"],
-    installmentsNeeded: body["Are_Multiple_Invoices_Req_d__c"],
+    installmentsNeeded: body["Are_Installment_Payments_Required__c"],
+    multiYear: body ["Multi_year__c"],
+    amountPaidByCPF: body["Amount_paid_by_CPF__c"],
+    amountPaidByCPFCustomer: body["Amount_paid_by_CPF_Customer__c"],
+    offerNo: body["Offer_no__c"],
     installments: body["Number_Installment_payments__c"],
+    invoiceAccountId: body["Invoice_Account__c"],
+    subrogationAccount: body["Subrogation_Account__c"],
+    financeReviewNeeded: body["Review_by_Finance_needed__c"]
   });
 
   const contractLines = opportunityLines.map((opportunityLine) => {
