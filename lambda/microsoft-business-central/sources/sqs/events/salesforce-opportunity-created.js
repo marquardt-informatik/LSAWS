@@ -37,7 +37,7 @@ module.exports = async function (event) {
     sellToContactPhone: body["Different_Billing_Contact_Phone__c"],
     sellToContacteMail: body["Different_Billing_Email_Address__c"],
     acceptanceDate: body["CloseDate"],
-    // 'contractStart': body[''],
+    contractStart: body["Invoice_Date__c"],
     // 'contractEnd': body[''],
     budget: body["Flexible_Budget__c"],
     // 'budgetCurrency': body[''],
@@ -55,8 +55,10 @@ module.exports = async function (event) {
     offerNo: body["Offer_no__c"],
     installments: body["Number_Installment_payments__c"],
     invoiceAccountId: body["Invoice_Account__c"],
-    subrogationAccount: body["Subrogation_Account__c"],
-    financeReviewNeeded: body["Review_by_Finance_needed__c"]
+    subrogationAccountId: body["Subrogation_Account__c"],
+    financeReviewNeeded: body["Review_by_Finance_needed__c"],
+    sellAndBillEqual: body["Are Customer and Billing info the same"],
+    billingLanguage: body["Order_Form_Billing_Language_Text__c"]
   });
 
   const contractLines = opportunityLines.map((opportunityLine) => {
