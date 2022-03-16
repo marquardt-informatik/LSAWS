@@ -58,7 +58,8 @@ module.exports = async function (event) {
     subrogationAccountId: body["Subrogation_Account__c"],
     financeReviewNeeded: body["Review_by_Finance_needed__c"],
     sellAndBillEqual: body["Are Customer and Billing info the same"],
-    billingLanguage: body["Order_Form_Billing_Language_Text__c"]
+    billingLanguage: body["Order_Form_Billing_Language_Text__c"],
+    invoiceDate: body ["Invoice_Date__c"],
   });
 
   const contractLines = opportunityLines.map((opportunityLine) => {
