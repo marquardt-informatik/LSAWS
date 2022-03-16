@@ -13,7 +13,14 @@ const EVENT_NAME_WHITELIST = [
   "StudentCreated",
   "StudentUpdated",
   "StudentDeleted",
+  "SessionCreated",
+  "SessionUpdated",
+  "SessionDeleted"
 ];
+
+const SESSION_CREATED = process.env.SESSION_CREATED
+const SESSION_UPDATED = process.env.SESSION_CREATED
+const SESSION_DELETED = process.env.SESSION_CREATED
 
 module.exports = async function (body) {
   const { eventName, data } = body;
@@ -36,6 +43,13 @@ module.exports = async function (body) {
   }
 
   // @todo data validation.
+  if (eventName === SESSION_CREATED) {
+    eventName = 'LicenseCreated'
+  } else if (eventName === SESSION_UPDATED) {
+    eventName = 'LicenseUpdated'
+  } else if (eventName === SESSION_DELETED) {
+    eventName = 'LicenseDeleted'
+  }
 
   await sns.publish(`Backend${eventName}`, data);
 
